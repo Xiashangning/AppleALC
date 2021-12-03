@@ -115,12 +115,24 @@ private:
 	 *  Hooked AppleHDAController start
 	 */
 	static bool AppleHDAController_start(IOService* service, IOService* provider);
+	
+	/**
+	 *  Hooked AppleHDAEngine performAudioEngineStart
+	 */
+	static IOReturn AppleHDAEngine_performAudioEngineStart(IOService* service);
+	
+	/**
+	 *  Hooked AppleHDAEngine performAudioEngineStop
+	 */
+	static IOReturn AppleHDAEngine_performAudioEngineStop(IOService* service);
 		
 	/**
 	 *  Trampolines for original method invocations
 	 */
 	mach_vm_address_t orgGfxProbe {0};
 	mach_vm_address_t orgAppleHDAController_start {0};
+	mach_vm_address_t orgAppleHDAEngine_performAudioEngineStart {0};
+	mach_vm_address_t orgAppleHDAEngine_performAudioEngineStop {0};
 
 	/**
 	 *  @enum IOAudioDevicePowerState

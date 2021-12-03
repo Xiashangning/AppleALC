@@ -382,6 +382,16 @@ bool AlcEnabler::AppleHDAController_start(IOService* service, IOService* provide
 	return FunctionCast(AppleHDAController_start, callbackAlc->orgAppleHDAController_start)(service, provider);
 }
 
+IOReturn AlcEnabler::AppleHDAEngine_performAudioEngineStart(IOService *service) {
+	service->requireMaxBusStall(10000);
+	return FunctionCast(AppleHDAEngine_performAudioEngineStart, callbackAlc->orgAppleHDAEngine_performAudioEngineStart)(service);
+}
+
+IOReturn AlcEnabler::AppleHDAEngine_performAudioEngineStop(IOService *service) {
+	service->requireMaxBusStall(0);
+	return FunctionCast(AppleHDAEngine_performAudioEngineStop, callbackAlc->orgAppleHDAEngine_performAudioEngineStop)(service);
+}
+
 IOReturn AlcEnabler::IOHDACodecDevice_executeVerb(void *hdaCodecDevice, uint16_t nid, uint16_t verb, uint16_t param, unsigned int *output, bool waitForSuccess)
 {
 	DBGLOG("alc", "IOHDACodecDevice::executeVerb with parameters nid = %u, verb = %u, param = %u", nid, verb, param);
@@ -529,6 +539,12 @@ void AlcEnabler::processKext(KernelPatcher &patcher, size_t index, mach_vm_addre
 		// AppleHDADriver::performPowerStateChange
 		KernelPatcher::RouteRequest requestPowerChange(symPerformPowerChange, performPowerChange, orgPerformPowerChange);
 		patcher.routeMultiple(index, &requestPowerChange, 1, address, size);
+		
+		KernelPatcher::RouteRequest requestEngineStart("__ZN14AppleHDAEngine23performAudioEngineStartEv", AppleHDAEngine_performAudioEngineStart, orgAppleHDAEngine_performAudioEngineStart);
+		patcher.routeMultiple(index, &requestEngineStart, 1, address, size);
+		
+		KernelPatcher::RouteRequest requestEngineStop("__ZN14AppleHDAEngine22performAudioEngineStopEv", AppleHDAEngine_performAudioEngineStop, orgAppleHDAEngine_performAudioEngineStop);
+		patcher.routeMultiple(index, &requestEngineStop, 1, address, size);
 		
 		// AppleHDACodecGeneric::initializePinConfigDefaultFromOverride does not take an IOService parameter in most versions of 10.5 and under.
 		if (getKernelVersion() >= KernelVersion::SnowLeopard
